@@ -5,6 +5,7 @@ public abstract class WarehouseItem {
     private final String name;
     private double price;
 
+    //Class Constructor
     public WarehouseItem(String id, String name, double price){
         this.id = id;
         this.name = name;
