@@ -12,8 +12,8 @@ public abstract class WarehouseItem {
     protected WarehouseItem(String id, String name, double price, int stockQuantity, int stockThreshold, String supplierId){
         this.id = id;
         this.name = name;
-        setPrice(price);
-        setQuantity(stockQuantity);
+        this.price = price;
+        this.stockQuantity = stockQuantity;
         this.stockThreshold = stockThreshold;
         this.supplierId = supplierId;
     }
@@ -28,16 +28,9 @@ public abstract class WarehouseItem {
     public double getPrice() {
         return price;
     }
-    public void setPrice(double price) {
-        this.price=price;
-    }
 
     public int getQuantity() {
         return stockQuantity;
-    }
-
-    public void setQuantity(int stockQuantity){
-        this.stockQuantity = stockQuantity;
     }
 
     public boolean isLowStock(){
@@ -52,9 +45,6 @@ public abstract class WarehouseItem {
         return supplierId;
     }
 
-    public void setSupplierId(String supplierId) {
-        this.supplierId = supplierId;
-    }
 
     public abstract String getProductType();
 }
