@@ -17,7 +17,7 @@ public class MainMenuView extends CLReaderView {
         ProductManager productManager = new ProductManager();
         SupplierManager supplierManager = new SupplierManager();
 
-        this.productView = new ProductView(scanner);
+        this.productView = new ProductView(productManager, supplierManager, scanner);
         this.supplierView = new SupplierView(scanner);
         this.orderView = new OrderView(scanner);
     }
