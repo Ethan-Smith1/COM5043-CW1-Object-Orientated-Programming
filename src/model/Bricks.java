@@ -2,11 +2,10 @@ package model;
 
 public class Bricks extends WarehouseItem {
 
+    public static final String DEFAULT_BRICK_TYPE = "Standard";
+
     private String brickType;
 
-    public Bricks(String id, String name, double price, int stockQuantity, int stockThreshold, String supplierId) {
-        this(id, name, price, stockQuantity, stockThreshold, supplierId, "Standard");
-    }
 
     public Bricks(String id,
                   String name,
@@ -16,7 +15,7 @@ public class Bricks extends WarehouseItem {
                   String supplierId,
                   String brickType) {
         super(id, name, price, stockQuantity, stockThreshold, supplierId);
-        setBrickType(brickType);
+        this.brickType = brickType;
     }
 
     @Override
@@ -26,13 +25,6 @@ public class Bricks extends WarehouseItem {
 
     public String getBrickType() {
         return brickType;
-    }
-
-    public void setBrickType(String brickType) {
-        if (brickType == null || brickType.isBlank()) {
-            throw new IllegalArgumentException("Brick type is required.");
-        }
-        this.brickType = brickType.trim();
     }
 }
 
