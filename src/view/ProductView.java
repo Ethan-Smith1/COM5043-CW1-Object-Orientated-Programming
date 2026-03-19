@@ -201,15 +201,7 @@ public class ProductView extends CLReaderView {
             return;
         }
 
-        System.out.printf(PRODUCT_TABLE_FORMAT,
-                "ID",
-                "Name",
-                "Type",
-                "Price",
-                "Qty",
-                "Threshold",
-                "Supplier",
-                "Details");
+        System.out.printf(PRODUCT_TABLE_FORMAT,"ID", "Name", "Type", "Price", "Qty", "Threshold", "Supplier", "Details");
         System.out.println("-------------------------------------------------------------------------------------------------------------------------------");
 
         for (WarehouseItem product : products) {
