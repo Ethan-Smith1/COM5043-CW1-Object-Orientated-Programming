@@ -9,7 +9,7 @@ import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 
-public class ProductManager {
+public class InventoryManager {
 
     private static final String PRODUCT_COLUMNS =
             "product_id, name, price, quantity, threshold, supplier_id, product_type, " +

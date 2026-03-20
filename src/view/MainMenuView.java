@@ -1,23 +1,23 @@
 package view;
 
-import controller.ProductManager;
+import controller.InventoryManager;
 import controller.SupplierManager;
 
 import java.util.Scanner;
 
 public class MainMenuView extends CLReaderView {
 
-    private final ProductView productView;
+    private final InventoryView inventoryView;
     private final SupplierView supplierView;
     private final OrderView orderView;
 
     public MainMenuView() {
         super(new Scanner(System.in));
 
-        ProductManager productManager = new ProductManager();
+        InventoryManager inventoryManager = new InventoryManager();
         SupplierManager supplierManager = new SupplierManager();
 
-        this.productView = new ProductView(productManager, supplierManager, scanner);
+        this.inventoryView = new InventoryView(inventoryManager, supplierManager, scanner);
         this.supplierView = new SupplierView(scanner, supplierManager);
         this.orderView = new OrderView(scanner);
     }
@@ -32,7 +32,7 @@ public class MainMenuView extends CLReaderView {
             String choice = readString("Choose an option");
 
             switch (choice) {
-                case "1" -> productView.run();
+                case "1" -> inventoryView.run();
                 case "2" -> supplierView.run();
                 case "3" -> orderView.run();
                 case "0" -> running = false;

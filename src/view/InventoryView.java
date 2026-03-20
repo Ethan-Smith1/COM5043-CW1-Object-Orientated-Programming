@@ -1,6 +1,6 @@
 package view;
 
-import controller.ProductManager;
+import controller.InventoryManager;
 import controller.SupplierManager;
 import model.Bricks;
 import model.Drill;
@@ -12,16 +12,16 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Scanner;
 
-public class ProductView extends CLReaderView {
+public class InventoryView extends CLReaderView {
 
     private static final String PRODUCT_TABLE_FORMAT = "%-12s %-24s %-12s %-10s %-8s %-12s %-14s %-30s%n";
 
-    private final ProductManager productManager;
+    private final InventoryManager inventoryManager;
     private final SupplierManager supplierManager;
 
-    public ProductView(ProductManager productManager, SupplierManager supplierManager, Scanner scanner) {
+    public InventoryView(InventoryManager inventoryManager, SupplierManager supplierManager, Scanner scanner) {
         super(scanner);
-        this.productManager = productManager;
+        this.inventoryManager = inventoryManager;
         this.supplierManager = supplierManager;
     }
 
@@ -55,7 +55,7 @@ public class ProductView extends CLReaderView {
     }
 
     private void showAllProducts() {
-        printProducts(productManager.getAllProducts());
+        printProducts(inventoryManager.getAllProducts());
     }
 
     private void searchProducts() {
@@ -65,7 +65,7 @@ public class ProductView extends CLReaderView {
             System.out.println("Please enter a product ID or name");
             return;
         }
-        printProducts(productManager.searchProducts(searchTerm));
+        printProducts(inventoryManager.searchProducts(searchTerm));
     }
 
     private void addProduct() {
@@ -93,7 +93,7 @@ public class ProductView extends CLReaderView {
                     supplier.getId()
             );
 
-            boolean added = productManager.addProduct(newProduct);
+            boolean added = inventoryManager.addProduct(newProduct);
             if (added) {
                 System.out.println("Product added: " + newProduct.getName() + " (" + newProduct.getId() + ")");
             } else {
@@ -109,7 +109,7 @@ public class ProductView extends CLReaderView {
             String productId = readString("Product ID to update");
             int quantity = readInt("New quantity");
 
-            boolean updated = productManager.updateProductStock(productId, quantity);
+            boolean updated = inventoryManager.updateProductStock(productId, quantity);
             if (updated) {
                 System.out.println("Stock updated for product ID " + productId + ".");
             } else {
@@ -121,7 +121,7 @@ public class ProductView extends CLReaderView {
     }
 
     private void showLowStockReport() {
-        List<WarehouseItem> lowStockProducts = productManager.getLowStockProducts();
+        List<WarehouseItem> lowStockProducts = inventoryManager.getLowStockProducts();
         if (lowStockProducts.isEmpty()) {
             System.out.println("No products are currently low on stock.");
             return;
