@@ -86,7 +86,9 @@ public class OrderView extends CLReaderView {
             }
 
             Order order = new Order(
+                    0,
                     productId,
+                    product.getName(),
                     quantity,
                     product.getPrice(),
                     LocalDateTime.now()

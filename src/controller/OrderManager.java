@@ -9,7 +9,7 @@ import java.util.List;
 public class OrderManager {
 
     private static final String SELECT_ALL_ORDERS_SQL =
-            "SELECT order_id, product_id, quantity, product_price, order_date " +
+            "SELECT order_id, product_id, quantity, product_price, order_date, (SELECT name FROM products WHERE product_id = orders.product_id) as product_name " +
             "FROM orders ORDER BY order_date DESC";
 
     private static final String INSERT_ORDER_SQL =
@@ -17,12 +17,12 @@ public class OrderManager {
             "VALUES (?, ?, ?, ?)";
 
     private static final String SEARCH_ORDERS_SQL =
-            "SELECT order_id, product_id, quantity, product_price, order_date " +
+            "SELECT order_id, product_id, quantity, product_price, order_date, (SELECT name FROM products WHERE product_id = orders.product_id) as product_name " +
             "FROM orders WHERE LOWER(CAST(order_id AS TEXT)) LIKE ? OR LOWER(product_id) LIKE ? " +
             "ORDER BY order_date DESC";
 
     private static final String GET_ORDER_BY_ID_SQL =
-            "SELECT order_id, product_id, quantity, product_price, order_date " +
+            "SELECT order_id, product_id, quantity, product_price, order_date, (SELECT name FROM products WHERE product_id = orders.product_id) as product_name " +
             "FROM orders WHERE order_id = ?";
 
     private static final String DELETE_ORDER_SQL =
@@ -168,6 +168,7 @@ public class OrderManager {
         return new Order(
                 resultSet.getInt("order_id"),
                 resultSet.getString("product_id"),
+                resultSet.getString("product_name"),
                 resultSet.getInt("quantity"),
                 resultSet.getDouble("product_price"),
                 resultSet.getTimestamp("order_date").toLocalDateTime()

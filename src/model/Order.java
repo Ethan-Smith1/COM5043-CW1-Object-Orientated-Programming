@@ -5,19 +5,16 @@ import java.time.LocalDateTime;
 public class Order {
     private final int id;
     private final String productId;
+    private final String productName;
     private final int quantity;
     private final double productPrice;
     private final LocalDateTime orderDate;
 
-
-    public Order(String productId, int quantity, double productPrice, LocalDateTime orderDate) {
-        this(-1, productId, quantity, productPrice, orderDate);
-    }
-
     // Class Constructor
-    public Order(int id, String productId, int quantity, double productPrice, LocalDateTime orderDate) {
+    public Order(int id, String productId, String productName, int quantity, double productPrice, LocalDateTime orderDate) {
         this.id = id;
         this.productId = productId;
+        this.productName = productName;
         this.quantity = quantity;
         this.productPrice = productPrice;
         this.orderDate = orderDate;
@@ -30,6 +27,10 @@ public class Order {
 
     public String getProductId() {
         return productId;
+    }
+
+    public String getProductName() {
+        return productName;
     }
 
     public int getQuantity() {
@@ -49,6 +50,6 @@ public class Order {
     }
 
     public String getDisplayName() {
-        return "Order " + id + " created for product: " + productId + " (" + quantity + " units)";
+        return "Order " + id + " created for the product " + productName + " (" + quantity + " units)";
     }
 }
