@@ -1,6 +1,7 @@
 package view;
 
 import controller.InventoryManager;
+import controller.OrderManager;
 import controller.SupplierManager;
 
 import java.util.Scanner;
@@ -16,14 +17,15 @@ public class MainMenuView extends CLReaderView {
 
         InventoryManager inventoryManager = new InventoryManager();
         SupplierManager supplierManager = new SupplierManager();
+        OrderManager orderManager = new OrderManager(inventoryManager);
 
         this.inventoryView = new InventoryView(inventoryManager, supplierManager, scanner);
         this.supplierView = new SupplierView(scanner, supplierManager);
-        this.orderView = new OrderView(scanner);
+        this.orderView = new OrderView(scanner, orderManager, inventoryManager);
     }
 
     public void run() {
-        System.out.println("BNU Warehouse Management System (CLI)");
+        System.out.println("Welcome to BNU Warehouse Management System");
         System.out.println("-----------------------------------");
 
         boolean running = true;
@@ -40,7 +42,7 @@ public class MainMenuView extends CLReaderView {
             }
         }
 
-        System.out.println("Exiting CLI.");
+        System.out.println("Exiting Warehouse Management System .");
     }
 
     private void printMenu() {

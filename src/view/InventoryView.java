@@ -109,7 +109,7 @@ public class InventoryView extends CLReaderView {
             String productId = readString("Product ID to update");
             int quantity = readInt("New quantity");
 
-            boolean updated = inventoryManager.updateProductStock(productId, quantity);
+            boolean updated = inventoryManager.setProductStock(productId, quantity);
             if (updated) {
                 System.out.println("Stock updated for product ID " + productId + ".");
             } else {

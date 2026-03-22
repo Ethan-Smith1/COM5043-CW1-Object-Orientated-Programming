@@ -27,7 +27,10 @@ public class InventoryManager {
                     "WHERE LOWER(product_id) LIKE ? OR LOWER(name) LIKE ? " +
                     "ORDER BY product_id";
 
-    private static final String UPDATE_STOCK_SQL =
+    private static final String UPDATE_STOCK_RELATIVE_SQL =
+            "UPDATE products SET quantity = quantity + ? WHERE product_id = ?";
+
+    private static final String UPDATE_STOCK_ABSOLUTE_SQL =
             "UPDATE products SET quantity = ? WHERE product_id = ?";
 
     public List<WarehouseItem> getAllProducts() {
@@ -98,7 +101,25 @@ public class InventoryManager {
         return lowStockProducts;
     }
 
-    public boolean updateProductStock(String productId, int newQuantity) {
+    public boolean updateProductStock(String productId, int quantityChange) {
+        if (productId == null || productId.isBlank()) {
+            throw new IllegalArgumentException("Select a product before updating stock.");
+        }
+
+        try (Connection connection = DatabaseConnection.getConnection();
+             PreparedStatement preparedStatement = connection.prepareStatement(UPDATE_STOCK_RELATIVE_SQL)) {
+
+            preparedStatement.setInt(1, quantityChange);
+            preparedStatement.setString(2, productId.trim());
+            return preparedStatement.executeUpdate() > 0;
+
+        } catch (SQLException sqlException) {
+            System.err.println("Error updating product stock: " + sqlException.getMessage());
+            return false;
+        }
+    }
+
+    public boolean setProductStock(String productId, int newQuantity) {
         if (productId == null || productId.isBlank()) {
             throw new IllegalArgumentException("Select a product before updating stock.");
         }
@@ -107,7 +128,7 @@ public class InventoryManager {
         }
 
         try (Connection connection = DatabaseConnection.getConnection();
-             PreparedStatement preparedStatement = connection.prepareStatement(UPDATE_STOCK_SQL)) {
+             PreparedStatement preparedStatement = connection.prepareStatement(UPDATE_STOCK_ABSOLUTE_SQL)) {
 
             preparedStatement.setInt(1, newQuantity);
             preparedStatement.setString(2, productId.trim());
