@@ -13,25 +13,28 @@ public class InventoryManager {
 
     private static final String PRODUCT_COLUMNS =
             "product_id, name, price, quantity, threshold, supplier_id, product_type, " +
-            "drill_size_mm, lifting_capacity_kg, brick_type";
+            "drill_size_mm, lifting_capacity_kg, brick_type, is_active";
 
     private static final String SELECT_ALL_PRODUCTS_SQL =
-            "SELECT " + PRODUCT_COLUMNS + " FROM products ORDER BY product_id";
+            "SELECT " + PRODUCT_COLUMNS + " FROM products WHERE is_active = TRUE ORDER BY product_id";
 
     private static final String INSERT_PRODUCT_SQL =
             "INSERT INTO products (product_id, name, price, quantity, threshold, supplier_id, product_type, " +
-                    "drill_size_mm, lifting_capacity_kg, brick_type) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                    "drill_size_mm, lifting_capacity_kg, brick_type, is_active) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, TRUE)";
 
     private static final String SEARCH_PRODUCTS_SQL =
             "SELECT " + PRODUCT_COLUMNS + " FROM products " +
-                    "WHERE LOWER(product_id) LIKE ? OR LOWER(name) LIKE ? " +
+                    "WHERE (LOWER(product_id) LIKE ? OR LOWER(name) LIKE ?) AND is_active = TRUE " +
                     "ORDER BY product_id";
 
     private static final String UPDATE_STOCK_RELATIVE_SQL =
-            "UPDATE products SET quantity = quantity + ? WHERE product_id = ?";
+            "UPDATE products SET quantity = quantity + ? WHERE product_id = ? AND is_active = TRUE";
 
     private static final String UPDATE_STOCK_ABSOLUTE_SQL =
-            "UPDATE products SET quantity = ? WHERE product_id = ?";
+            "UPDATE products SET quantity = ? WHERE product_id = ? AND is_active = TRUE";
+
+    private static final String DELETE_PRODUCT_SQL =
+            "UPDATE products SET is_active = FALSE WHERE product_id = ? AND is_active = TRUE";
 
     public List<WarehouseItem> getAllProducts() {
         return fetchProducts(SELECT_ALL_PRODUCTS_SQL);
@@ -42,10 +45,12 @@ public class InventoryManager {
             throw new IllegalArgumentException("Product details are required.");
         }
 
+        String normalizedProductId = normalizeProductId(product.getId());
+
         try (Connection connection = DatabaseConnection.getConnection();
              PreparedStatement preparedStatement = connection.prepareStatement(INSERT_PRODUCT_SQL)) {
 
-            preparedStatement.setString(1, product.getId());
+            preparedStatement.setString(1, normalizedProductId);
             preparedStatement.setString(2, product.getName());
             preparedStatement.setDouble(3, product.getPrice());
             preparedStatement.setInt(4, product.getQuantity());
@@ -58,7 +63,7 @@ public class InventoryManager {
 
         } catch (SQLException sqlException) {
             if ("23505".equals(sqlException.getSQLState())) {
-                throw new IllegalArgumentException("A product with ID '" + product.getId() + "' already exists.");
+                throw new IllegalArgumentException("A product with ID '" + normalizedProductId + "' already exists.");
             }
             System.err.println("Error adding product: " + sqlException.getMessage());
             return false;
@@ -180,6 +185,32 @@ public class InventoryManager {
                     brickType != null ? brickType : Bricks.DEFAULT_BRICK_TYPE);
             default -> throw new IllegalStateException("Unknown product type: " + productType);
         };
+    }
+
+    public boolean deleteProduct(String productId) {
+        if (productId == null || productId.isBlank()) {
+            throw new IllegalArgumentException("Product ID is required.");
+        }
+
+        try (Connection connection = DatabaseConnection.getConnection();
+             PreparedStatement preparedStatement = connection.prepareStatement(DELETE_PRODUCT_SQL)) {
+
+            preparedStatement.setString(1, productId.trim());
+            return preparedStatement.executeUpdate() > 0;
+
+        } catch (SQLException sqlException) {
+            System.err.println("Error deleting product: " + sqlException.getMessage());
+            return false;
+        }
+    }
+
+    private String normalizeProductId(String productId) {
+        if (productId == null || productId.isBlank()) {
+            throw new IllegalArgumentException("Product ID is required.");
+        }
+
+        String userInput = productId.trim();
+        return "PD" + userInput.replaceFirst("(?i)^PD", "");
     }
 
     private void bindTypeSpecificColumns(PreparedStatement preparedStatement, WarehouseItem product) throws SQLException {

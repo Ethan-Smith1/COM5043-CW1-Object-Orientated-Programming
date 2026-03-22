@@ -37,8 +37,9 @@ public class InventoryView extends CLReaderView {
                 case "3" -> addProduct();
                 case "4" -> updateStock();
                 case "5" -> showLowStockReport();
+                case "6" -> deleteProduct();
                 case "0" -> productMenu = false;
-                default -> System.out.println("Invalid option. Please choose 0-5.");
+                default -> System.out.println("Invalid option. Please choose 0-6.");
             }
         }
     }
@@ -51,6 +52,7 @@ public class InventoryView extends CLReaderView {
         System.out.println("3) Add product");
         System.out.println("4) Update stock quantity");
         System.out.println("5) Low stock report");
+        System.out.println("6) Delete product");
         System.out.println("0) Back to main menu");
     }
 
@@ -229,5 +231,18 @@ public class InventoryView extends CLReaderView {
         }
         return "";
     }
-}
 
+    private void deleteProduct() {
+        try {
+            String productId = readString("ID of product that you want to delete");
+
+            if (inventoryManager.deleteProduct(productId)) {
+                System.out.println("Product " + productId + " deleted.");
+            } else {
+                System.out.println("Product could not be deleted. Check the product ID is valid.");
+            }
+        } catch (IllegalArgumentException exception) {
+            System.out.println("Input error: " + exception.getMessage());
+        }
+    }
+}
