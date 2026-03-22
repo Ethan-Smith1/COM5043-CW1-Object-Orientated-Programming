@@ -146,10 +146,9 @@ public class InventoryView extends CLReaderView {
 
         while (true) {
             String supplierId = readString("Supplier ID");
-            for (Supplier supplier : suppliers) {
-                if (supplier.getId().equalsIgnoreCase(supplierId.trim())) {
-                    return supplier;
-                }
+            Supplier supplier = supplierManager.getSupplierById(supplierId);
+            if (supplier != null) {
+                return supplier;
             }
             System.out.println("Supplier ID not found. Please try again.");
         }

@@ -54,7 +54,6 @@ public class OrderManager {
             preparedStatement.setDouble(3, order.getProductPrice());
             preparedStatement.setTimestamp(4, Timestamp.valueOf(order.getOrderDate()));
 
-            // Update inventory when order is created
             boolean inventoryUpdated = inventoryManager.updateProductStock(
                     order.getProductId(),
                     -order.getQuantity()
