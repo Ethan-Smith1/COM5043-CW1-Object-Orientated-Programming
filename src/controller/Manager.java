@@ -9,7 +9,7 @@ public abstract class Manager {
     protected <E> List<E> fetchEntities(String query, ResultSetMapper<E> mapper) {
         List<E> entities = new ArrayList<>();
 
-        try (Connection connection = DatabaseConnection.getConnection();
+        try (Connection connection = DatabaseConnectionManager.getConnection();
              PreparedStatement preparedStatement = connection.prepareStatement(query);
              ResultSet resultSet = preparedStatement.executeQuery()) {
 
@@ -26,7 +26,7 @@ public abstract class Manager {
     protected <E> List<E> fetchEntities(String query, PreparedStatementSetter setter, ResultSetMapper<E> mapper) {
         List<E> entities = new ArrayList<>();
 
-        try (Connection connection = DatabaseConnection.getConnection();
+        try (Connection connection = DatabaseConnectionManager.getConnection();
              PreparedStatement preparedStatement = connection.prepareStatement(query)) {
 
             setter.set(preparedStatement);
@@ -44,7 +44,7 @@ public abstract class Manager {
     }
 
     protected <E> E fetchSingleEntity(String query, PreparedStatementSetter setter, ResultSetMapper<E> mapper) {
-        try (Connection connection = DatabaseConnection.getConnection();
+        try (Connection connection = DatabaseConnectionManager.getConnection();
              PreparedStatement preparedStatement = connection.prepareStatement(query)) {
 
             setter.set(preparedStatement);
@@ -62,7 +62,7 @@ public abstract class Manager {
     }
 
     protected boolean executeUpdate(String query, PreparedStatementSetter setter) {
-        try (Connection connection = DatabaseConnection.getConnection();
+        try (Connection connection = DatabaseConnectionManager.getConnection();
              PreparedStatement preparedStatement = connection.prepareStatement(query)) {
 
             setter.set(preparedStatement);
@@ -75,7 +75,7 @@ public abstract class Manager {
     }
 
     protected boolean executeUpdate(String query, PreparedStatementSetter setter, String duplicateKeyMsg) {
-        try (Connection connection = DatabaseConnection.getConnection();
+        try (Connection connection = DatabaseConnectionManager.getConnection();
              PreparedStatement preparedStatement = connection.prepareStatement(query)) {
 
             setter.set(preparedStatement);

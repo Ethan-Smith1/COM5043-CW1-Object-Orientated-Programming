@@ -3,7 +3,7 @@ import java.sql.*;
 import java.io.FileInputStream;
 import java.util.Properties;
 
-public class DatabaseConnection {
+public class DatabaseConnectionManager {
     private static String url, user, pass;
 
     static {
