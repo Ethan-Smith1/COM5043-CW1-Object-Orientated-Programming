@@ -1,12 +1,10 @@
 package controller;
 
 import model.Order;
-
 import java.sql.*;
-import java.util.ArrayList;
 import java.util.List;
 
-public class OrderManager {
+public class OrderManager extends Manager {
 
     private static final String SELECT_ALL_ORDERS_SQL =
             "SELECT order_id, product_id, quantity, product_price, order_date, (SELECT name FROM products WHERE product_id = orders.product_id) as product_name " +
@@ -35,44 +33,34 @@ public class OrderManager {
     }
 
     public List<Order> getAllOrders() {
-        return fetchOrders(SELECT_ALL_ORDERS_SQL);
+        return fetchEntities(SELECT_ALL_ORDERS_SQL, this::mapOrder);
     }
 
     public boolean createOrder(Order order) {
-        if (order == null) {
-            throw new IllegalArgumentException("Order details are required.");
-        }
+        validateNotNull(order, "Order details are required.");
         if (order.getQuantity() <= 0) {
             throw new IllegalArgumentException("Order quantity must be greater than 0.");
         }
 
-        try (Connection connection = DatabaseConnection.getConnection();
-             PreparedStatement preparedStatement = connection.prepareStatement(INSERT_ORDER_SQL)) {
+        boolean inventoryUpdated = inventoryManager.updateProductStock(
+                order.getProductId(),
+                -order.getQuantity()
+        );
 
-            preparedStatement.setString(1, order.getProductId());
-            preparedStatement.setInt(2, order.getQuantity());
-            preparedStatement.setDouble(3, order.getProductPrice());
-            preparedStatement.setTimestamp(4, Timestamp.valueOf(order.getOrderDate()));
-
-            boolean inventoryUpdated = inventoryManager.updateProductStock(
-                    order.getProductId(),
-                    -order.getQuantity()
-            );
-
-            if (!inventoryUpdated) {
-                throw new IllegalArgumentException("Could not update inventory for product '" + order.getProductId() + "'. " +
-                        "Check the product ID is correct and has enough stock.");
-            }
-
-            return preparedStatement.executeUpdate() > 0;
-
-        } catch (SQLException sqlException) {
-            if ("23505".equals(sqlException.getSQLState())) {
-                throw new IllegalArgumentException("An order with ID '" + order.getId() + "' already exists.");
-            }
-            System.err.println("Error creating order: " + sqlException.getMessage());
-            return false;
+        if (!inventoryUpdated) {
+            throw new IllegalArgumentException("Could not update inventory for product '" + order.getProductId() + "'. " +
+                    "Check the product ID is correct and has enough stock.");
         }
+
+        return executeUpdate(
+                INSERT_ORDER_SQL,
+                preparedStatement -> {
+                    preparedStatement.setString(1, order.getProductId());
+                    preparedStatement.setInt(2, order.getQuantity());
+                    preparedStatement.setDouble(3, order.getProductPrice());
+                    preparedStatement.setTimestamp(4, Timestamp.valueOf(order.getOrderDate()));
+                }
+        );
     }
 
     public boolean cancelOrder(int orderId) {
@@ -90,34 +78,18 @@ public class OrderManager {
             throw new IllegalArgumentException("Could not restore the inventory for product '" + order.getProductId() + "'.");
         }
 
-        try (Connection connection = DatabaseConnection.getConnection();
-             PreparedStatement preparedStatement = connection.prepareStatement(DELETE_ORDER_SQL)) {
-
-            preparedStatement.setInt(1, orderId);
-            return preparedStatement.executeUpdate() > 0;
-
-        } catch (SQLException sqlException) {
-            System.err.println("Error deleting order: " + sqlException.getMessage());
-            return false;
-        }
+        return executeUpdate(
+                DELETE_ORDER_SQL,
+                preparedStatement -> preparedStatement.setInt(1, orderId)
+        );
     }
 
     public Order getOrderById(int orderId) {
-        try (Connection connection = DatabaseConnection.getConnection();
-             PreparedStatement preparedStatement = connection.prepareStatement(GET_ORDER_BY_ID_SQL)) {
-
-            preparedStatement.setInt(1, orderId);
-
-            try (ResultSet resultSet = preparedStatement.executeQuery()) {
-                if (resultSet.next()) {
-                    return mapOrder(resultSet);
-                }
-            }
-        } catch (SQLException sqlException) {
-            System.err.println("Error fetching order: " + sqlException.getMessage());
-        }
-
-        return null;
+        return fetchSingleEntity(
+                GET_ORDER_BY_ID_SQL,
+                preparedStatement -> preparedStatement.setInt(1, orderId),
+                this::mapOrder
+        );
     }
 
     public List<Order> searchOrders(String searchTerm) {
@@ -126,42 +98,15 @@ public class OrderManager {
         }
 
         String normalizedSearch = "%" + searchTerm.trim().toLowerCase() + "%";
-        List<Order> orders = new ArrayList<>();
 
-        try (Connection connection = DatabaseConnection.getConnection();
-             PreparedStatement preparedStatement = connection.prepareStatement(SEARCH_ORDERS_SQL)) {
-
-            preparedStatement.setString(1, normalizedSearch);
-            preparedStatement.setString(2, normalizedSearch);
-
-            try (ResultSet resultSet = preparedStatement.executeQuery()) {
-                while (resultSet.next()) {
-                    orders.add(mapOrder(resultSet));
-                }
-            }
-        } catch (SQLException sqlException) {
-            System.err.println("Error searching orders: " + sqlException.getMessage());
-        }
-
-        return orders;
-    }
-
-    private List<Order> fetchOrders(String query) {
-        List<Order> orders = new ArrayList<>();
-
-        try (Connection connection = DatabaseConnection.getConnection();
-             PreparedStatement preparedStatement = connection.prepareStatement(query)) {
-
-            try (ResultSet resultSet = preparedStatement.executeQuery()) {
-                while (resultSet.next()) {
-                    orders.add(mapOrder(resultSet));
-                }
-            }
-        } catch (SQLException sqlException) {
-            System.err.println("Error fetching orders: " + sqlException.getMessage());
-        }
-
-        return orders;
+        return fetchEntities(
+                SEARCH_ORDERS_SQL,
+                preparedStatement -> {
+                    preparedStatement.setString(1, normalizedSearch);
+                    preparedStatement.setString(2, normalizedSearch);
+                },
+                this::mapOrder
+        );
     }
 
     private Order mapOrder(ResultSet resultSet) throws SQLException {

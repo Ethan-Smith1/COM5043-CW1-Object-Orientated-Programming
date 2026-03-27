@@ -9,7 +9,7 @@ import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 
-public class InventoryManager {
+public class InventoryManager extends Manager {
 
     private static final String PRODUCT_COLUMNS =
             "product_id, name, price, quantity, threshold, supplier_id, product_type, " +
@@ -37,37 +37,31 @@ public class InventoryManager {
             "UPDATE products SET is_active = FALSE WHERE product_id = ? AND is_active = TRUE";
 
     public List<WarehouseItem> getAllProducts() {
-        return fetchProducts(SELECT_ALL_PRODUCTS_SQL);
+        return fetchEntities(SELECT_ALL_PRODUCTS_SQL, this::mapWarehouseItem);
     }
 
     public boolean addProduct(WarehouseItem product) {
-        if (product == null) {
-            throw new IllegalArgumentException("Product details are required.");
-        }
-
+        validateNotNull(product, "Product details are required.");
         String normalizedProductId = normalizeProductId(product.getId());
 
-        try (Connection connection = DatabaseConnection.getConnection();
-             PreparedStatement preparedStatement = connection.prepareStatement(INSERT_PRODUCT_SQL)) {
-
-            preparedStatement.setString(1, normalizedProductId);
-            preparedStatement.setString(2, product.getName());
-            preparedStatement.setDouble(3, product.getPrice());
-            preparedStatement.setInt(4, product.getQuantity());
-            preparedStatement.setInt(5, product.getStockThreshold());
-            preparedStatement.setString(6, product.getSupplierId());
-            preparedStatement.setString(7, product.getProductType());
-            bindTypeSpecificColumns(preparedStatement, product);
-
-            return preparedStatement.executeUpdate() > 0;
-
-        } catch (SQLException sqlException) {
-            if ("23505".equals(sqlException.getSQLState())) {
-                throw new IllegalArgumentException("A product with ID '" + normalizedProductId + "' already exists.");
-            }
-            System.err.println("Error adding product: " + sqlException.getMessage());
-            return false;
-        }
+        return executeUpdate(
+                INSERT_PRODUCT_SQL,
+                preparedStatement -> {
+                    preparedStatement.setString(1, normalizedProductId);
+                    preparedStatement.setString(2, product.getName());
+                    preparedStatement.setDouble(3, product.getPrice());
+                    preparedStatement.setInt(4, product.getQuantity());
+                    preparedStatement.setInt(5, product.getStockThreshold());
+                    preparedStatement.setString(6, product.getSupplierId());
+                    preparedStatement.setString(7, product.getProductType());
+                    try {
+                        bindTypeSpecificColumns(preparedStatement, product);
+                    } catch (SQLException e) {
+                        throw new RuntimeException(e);
+                    }
+                },
+                "A product with ID '" + normalizedProductId + "' already exists."
+        );
     }
 
     public List<WarehouseItem> searchProducts(String searchTerm) {
@@ -76,24 +70,15 @@ public class InventoryManager {
         }
 
         String normalizedSearch = "%" + searchTerm.trim().toLowerCase() + "%";
-        List<WarehouseItem> products = new ArrayList<>();
 
-        try (Connection connection = DatabaseConnection.getConnection();
-             PreparedStatement preparedStatement = connection.prepareStatement(SEARCH_PRODUCTS_SQL)) {
-
-            preparedStatement.setString(1, normalizedSearch);
-            preparedStatement.setString(2, normalizedSearch);
-
-            try (ResultSet resultSet = preparedStatement.executeQuery()) {
-                while (resultSet.next()) {
-                    products.add(mapWarehouseItem(resultSet));
-                }
-            }
-        } catch (SQLException sqlException) {
-            System.err.println("Error searching products: " + sqlException.getMessage());
-        }
-
-        return products;
+        return fetchEntities(
+                SEARCH_PRODUCTS_SQL,
+                preparedStatement -> {
+                    preparedStatement.setString(1, normalizedSearch);
+                    preparedStatement.setString(2, normalizedSearch);
+                },
+                this::mapWarehouseItem
+        );
     }
 
     public List<WarehouseItem> getLowStockProducts() {
@@ -107,60 +92,30 @@ public class InventoryManager {
     }
 
     public boolean updateProductStock(String productId, int quantityChange) {
-        if (productId == null || productId.isBlank()) {
-            throw new IllegalArgumentException("Select a product before updating stock.");
-        }
+        validateNotBlank(productId, "Select a product before updating stock");
 
-        try (Connection connection = DatabaseConnection.getConnection();
-             PreparedStatement preparedStatement = connection.prepareStatement(UPDATE_STOCK_RELATIVE_SQL)) {
-
-            preparedStatement.setInt(1, quantityChange);
-            preparedStatement.setString(2, productId.trim());
-            return preparedStatement.executeUpdate() > 0;
-
-        } catch (SQLException sqlException) {
-            System.err.println("Error updating product stock: " + sqlException.getMessage());
-            return false;
-        }
+        return executeUpdate(
+                UPDATE_STOCK_RELATIVE_SQL,
+                preparedStatement -> {
+                    preparedStatement.setInt(1, quantityChange);
+                    preparedStatement.setString(2, productId.trim());
+                }
+        );
     }
 
     public boolean setProductStock(String productId, int newQuantity) {
-        if (productId == null || productId.isBlank()) {
-            throw new IllegalArgumentException("Select a product before updating stock.");
-        }
+        validateNotBlank(productId, "Select a product before updating stock");
         if (newQuantity < 0) {
             throw new IllegalArgumentException("Quantity can't be negative.");
         }
 
-        try (Connection connection = DatabaseConnection.getConnection();
-             PreparedStatement preparedStatement = connection.prepareStatement(UPDATE_STOCK_ABSOLUTE_SQL)) {
-
-            preparedStatement.setInt(1, newQuantity);
-            preparedStatement.setString(2, productId.trim());
-            return preparedStatement.executeUpdate() > 0;
-
-        } catch (SQLException sqlException) {
-            System.err.println("Error updating product stock: " + sqlException.getMessage());
-            return false;
-        }
-    }
-
-    private List<WarehouseItem> fetchProducts(String query) {
-        List<WarehouseItem> products = new ArrayList<>();
-
-        try (Connection connection = DatabaseConnection.getConnection();
-             PreparedStatement preparedStatement = connection.prepareStatement(query)) {
-
-            try (ResultSet resultSet = preparedStatement.executeQuery()) {
-                while (resultSet.next()) {
-                    products.add(mapWarehouseItem(resultSet));
+        return executeUpdate(
+                UPDATE_STOCK_ABSOLUTE_SQL,
+                preparedStatement -> {
+                    preparedStatement.setInt(1, newQuantity);
+                    preparedStatement.setString(2, productId.trim());
                 }
-            }
-        } catch (SQLException sqlException) {
-            System.err.println("Error fetching products: " + sqlException.getMessage());
-        }
-
-        return products;
+        );
     }
 
     private WarehouseItem mapWarehouseItem(ResultSet resultSet) throws SQLException {
@@ -188,27 +143,16 @@ public class InventoryManager {
     }
 
     public boolean deleteProduct(String productId) {
-        if (productId == null || productId.isBlank()) {
-            throw new IllegalArgumentException("Product ID is required.");
-        }
+        validateNotBlank(productId, "Product ID");
 
-        try (Connection connection = DatabaseConnection.getConnection();
-             PreparedStatement preparedStatement = connection.prepareStatement(DELETE_PRODUCT_SQL)) {
-
-            preparedStatement.setString(1, productId.trim());
-            return preparedStatement.executeUpdate() > 0;
-
-        } catch (SQLException sqlException) {
-            System.err.println("Error deleting product: " + sqlException.getMessage());
-            return false;
-        }
+        return executeUpdate(
+                DELETE_PRODUCT_SQL,
+                preparedStatement -> preparedStatement.setString(1, productId.trim())
+        );
     }
 
     private String normalizeProductId(String productId) {
-        if (productId == null || productId.isBlank()) {
-            throw new IllegalArgumentException("Product ID is required.");
-        }
-
+        validateNotBlank(productId, "Product ID");
         String userInput = productId.trim();
         return "PD" + userInput.replaceFirst("(?i)^PD", "");
     }
