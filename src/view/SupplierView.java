@@ -37,7 +37,7 @@ public class SupplierView extends CLReaderView {
     private void printSupplierMenu() {
         System.out.println();
         System.out.println("Supplier Management");
-        System.out.println("1) List active suppliers");
+        System.out.println("1) List suppliers");
         System.out.println("2) Add supplier");
         System.out.println("3) Update supplier details");
         System.out.println("4) Delete supplier");
@@ -47,7 +47,7 @@ public class SupplierView extends CLReaderView {
     private void showSuppliers() {
         List<Supplier> suppliers = supplierManager.getAllSuppliers();
         if (suppliers.isEmpty()) {
-            System.out.println("No active suppliers found.");
+            System.out.println("No suppliers found.");
             return;
         }
 
