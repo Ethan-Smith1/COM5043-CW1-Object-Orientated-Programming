@@ -50,6 +50,6 @@ public class Order {
     }
 
     public String getDisplayName() {
-        return "Order " + id + " created for the product " + productName + " (" + quantity + " units)";
+        return "Order " + id + " created for the product " + productName + " [" + productId + "] (" + quantity + " units)";
     }
 }
